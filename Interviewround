@@ -1,0 +1,290 @@
+
+## LOAD DATA
+library(purrr)
+library(ggplot2)
+Beer <- read.csv("~/Desktop/8260_1.csv")
+# view column names
+names(Beer)
+summary(Beer)
+View(summary(Beer))
+#Paso Robles and Napa Valley are zip codes with most alcohol businesses 
+summary(Climate)
+## Looking at climate trends for wine regions for planning
+Climate <- read.csv("~/Desktop/2274247.csv")
+names(Climate)
+#Grouping stations by locations
+groups <- split(Climate, Climate$NAME)
+Paso <- rbind(groups$`PASO ROBLES MUNICIPAL AIRPORT, CA US`,
+              groups$`PASO ROBLES, CA US`,
+              groups$`LAS TABLAS CALIFORNIA, CA US`)
+Paso$AREA <- c('Paso')
+Napa <- rbind(groups$`BERRYESSA LAKE, CA US`,
+              groups$`LAKE BERRYESSA, CA US`,
+              groups$`NAPA CO AIRPORT, CA US`,
+              groups$`OAKVILLE 1 W, CA US`,
+              groups$`OAKVILLE 4 SW N0 2, CA US`,
+              groups$`MONTICELLO DAM, CA US`,
+              groups$`MARKLEY COVE, CA US`,
+              groups$`YOUNTVILLE, CA US`)
+Napa$AREA <- c('Napa')
+
+PN <- rbind(Paso, Napa)
+groups <- split(PN, PN$AREA)
+View(PN)
+
+
+View(PN)
+## Exploratory data analysis by year and climate variables
+
+Explore <-ggplot(PN)  +
+  geom_boxplot(aes(x="TAVG", y=TAVG, fill=AREA)) + 
+  geom_boxplot(aes(x="PRCP",y=PRCP, fill=AREA)) + 
+  geom_boxplot(aes(x="TMAX", y=TMAX, fill=AREA))+
+  geom_boxplot(aes(x="TMIN", y=TMIN, fill=AREA)) +
+ labs(x="Indices", y="Value") + theme_bw() + theme(axis.line = element_line(colour = "black"))
+
+Explore
+PN$Tempchange <- (PN$TMAX - PN$TMIN)
+View(PN)
+## What is the best predictor of precipitation?
+Tempchange <- ggplot(PN,aes(y = TMIN, x = DATE, colour = AREA,shape = AREA))+
+  geom_point() + geom_smooth(method = "lm", se=TRUE, fullrange=TRUE)+
+  xlab("Date")+
+  ylab("TMIN") + theme_bw()+
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"))+  theme(axis.title=element_text(family = "Times", face = "bold", size = 12)) +
+  theme(axis.text = element_text(family = "Times", face="bold",size = 11))
+Tempchange
+prec <- ggplot(PN,aes(y = PRCP, x = TMIN, colour = AREA,shape = AREA))+
+  geom_point() + geom_smooth(method = "lm", se=TRUE, fullrange=TRUE)+
+  xlab("Minimum Temperature")+
+  ylab("Precipitation") + theme_bw()+
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"))+  theme(axis.title=element_text(family = "Times", face = "bold", size = 12)) +
+  theme(axis.text = element_text(family = "Times", face="bold",size = 11))
+prec
+Maxtemp <- ggplot(PN,aes(y = PRCP, x =TMAX , colour = AREA,shape = AREA))+
+  geom_point() + geom_smooth(method = "lm", se=TRUE, fullrange=TRUE)+
+  xlab("Max temp")+
+  ylab("Precipitation") + theme_bw()+
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"))+  theme(axis.title=element_text(family = "Times", face = "bold", size = 12)) +
+  theme(axis.text = element_text(family = "Times", face="bold",size = 11))
+Maxtemp
+Mintemp <- ggplot(PN,aes(y = Tempchange, x =DATE , colour = AREA,shape = AREA))+
+  geom_point() + geom_smooth(method = "lm", se=TRUE, fullrange=TRUE)+
+  xlab("DATE")+
+  ylab("Temp change") + theme_bw()+
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"))+  theme(axis.title=element_text(family = "Times", face = "bold", size = 12)) +
+  theme(axis.text = element_text(family = "Times", face="bold",size = 11))
+Mintemp
+
+# 1. TMIN is decreasing for Napa and increasing for Paso
+# 2. TMAX is generally increasing for both, but NAPA has some
+# anomalies in the 2000-2020 range, so that's pulling NAPA
+# regression down.
+# 3. TAVG is generally increasing for both, but napa has some 
+# anomalies in the 2000-2010 range, which is drawing the regression line
+# down. This suggests more sporadic temps, and the unpredictable MAX
+# temperatures. Paso is similar to Napa in the 60s in terms of 
+# AVG temp. and Napa is similar to Paso in the 60s.
+# 4. Precipitation is remaining the same for Paso
+# decreasing for NAPA
+# 5. Temp change is really increasing for NAPA, almost approaching
+# the type of temp change we see in PAso. 
+
+## The most influential variables for grape berry quantity
+## and wine quality are temperature, precipitation, and 
+## radiation
+## precipitation was good early in the season but bad late in the season
+## T MIN increases had negative effects, TMax increases
+## later in the season were better.
+
+
+## Napa should be preparing for crops similar to Paso Robles
+## in terms of precipitation
+
+## assessing the goodness of fit of models for each climatic variable
+r2 = function(data) {
+  fit = lm(TMAX ~ PRCP, data = PN)
+  
+  broom::glance(fit)
+}
+map_dfr(groups, r2, .id = "AREA")
+# Minimum temperature is the best predictor of precipitation
+
+ # load data
+
+## Looking at daily summary data:
+
+Daily <- read.csv("~/Downloads/2329867.csv")
+
+
+summary(Daily)
+#Grouping stations by locations
+groups <- split(Daily, Daily$NAME)
+View(Daily)
+PasoD <- rbind(groups$`PASO ROBLES, CA US`)
+
+View(PasoD)
+View(PasoD)
+PasoD$AREA <- c('Paso')
+NapaD <- rbind(groups$`NAPA STATE HOSPITAL, CA US`)
+View(NapaD)
+View(Daily)
+NapaD$AREA <- c('Napa')
+
+DailyPN <- rbind(PasoD, NapaD)
+
+
+library(ggplot2)
+install.packages("forecast")
+library(forecast)
+library(dplyr)
+install.packages("colortools")
+library(colortools)
+
+class(Daily$DATE)
+## coerce factor to date
+NapaD$DATE_date <- as.Date(NapaD$DATE, format = "%Y-%m-%d")
+PasoD$DATE_date <- as.Date(PasoD$DATE, format = "%Y-%m-%d")
+Napa50 <- subset(NapaD, DATE_date >"1949-12-31" | 
+                    DATE_date < "1976-01-01")
+View(Napa50)
+View(NapaD)
+(time_plot <- ggplot(NapaD, aes(x = DATE_date, y = PRCP)) +
+    geom_line() +
+    scale_x_date(date_labels = "%Y", date_breaks = "5 year") +
+    theme_classic())
+D <- (decomp_2 <- ggplot(NapaD, aes(x = DATE_date, y = TMAX)) +
+    geom_line() +
+    geom_smooth(method = "loess", se = FALSE, span = 0.6) + xlab("Year") + ylab("Napa TMAX")+
+    theme_classic())
+
+D
+ 
+#PRECIPITATION
+install.packages("hydroTSM")
+library(hydroTSM)
+install.packages("xts")
+library(xts)
+#make row names date names
+
+NapaP <- NapaD[,c("DATE", "PRCP")]
+PasoP <- PasoD[,c("DATE", "PRCP")]
+
+Pasox <- xts(x=PasoP[,-1],order.by= as.POSIXct(PasoP$DATE), check.names=FALSE)
+Napax <- xts(x=NapaP[,-1],order.by= as.POSIXct(NapaP$DATE), check.names=FALSE)
+x <- window(Napax, start=as.Date("1950-01-01"), end=as.Date("2020-01-01"))
+x2 <- window(Pasox, start=as.Date("1950-01-01"), end=as.Date("2020-01-01"))
+View(x)
+#Monthly values of precipitation
+( m <- daily2monthly(x, FUN=sum) )
+( m2 <- daily2monthly(x2, FUN=sum) )
+
+#Dates of daily values
+dates <- time(x)
+dates2 <- time(x2)
+
+#Amount of years needed for computations
+( nyears <- yip(from=start(x), to=end(x), out.type="nmbr" ) )
+( nyears2 <- yip(from=start(x2), to=end(x2), out.type="nmbr" ) )
+#23
+#31
+
+#summary statistics
+
+smry(x)
+hydroplot(x, var.type="Precipitation", main="Napa",
+          pfreq = "dm")
+dwi(x)
+# Daily zoo to monthly zoo
+m <- daily2monthly(x, FUN=sum, na.rm=TRUE)
+m2 <- daily2monthly(x2, FUN=sum, na.rm=TRUE)
+# Creating a matrix with monthly values per year in each column
+View(m)
+M <- matrix(m, ncol=12, byrow=TRUE)
+M2 <- matrix(m2, ncol=12, byrow=TRUE)
+
+colnames(M) <- month.abb
+rownames(M) <- unique(format(time(m), "%Y"))
+# Plotting the monthly precipitation values
+require(lattice)
+print(matrixplot(M2, ColorRamp="Precipitation",
+                 main="Monthly precipitation at Paso, [mm/month]"))
+
+daily2annual(x2, FUN=sum, na.rm=TRUE)
+mean( daily2annual(x, FUN=sum, na.rm=TRUE) )
+
+monthlyfunction(m2, FUN=median, na.rm=TRUE)
+cmonth <- format(time(m2), "%b")
+
+months <- factor(cmonth, levels=unique(cmonth), ordered=TRUE)
+boxplot( coredata(m) ~ months, col="lightblue", main="Monthly Precipitation",
+         ylab="Precipitation, [mm]", xlab="Month")
+
+seasonalfunction(x2, FUN=sum, na.rm=TRUE) / nyears
+
+( DJF <- dm2seasonal(m2, season="DJF", FUN=sum) )
+( MAM <- dm2seasonal(m2, season="MAM", FUN=sum) )
+( JJA <- dm2seasonal(m2, season="JJA", FUN=sum) )
+( SON <- dm2seasonal(m2, season="SON", FUN=sum) )
+hydroplot(x2, pfreq="seasonal", FUN=sum, stype="default")
+
+# Number of days below 1 mm
+( R5mm <- length( x[x<1] ) )
+#wet days
+wet.index <- which(x >= 1)
+#95th percentile of precipitation on wet days
+( PRwn95 <- quantile(x[wet.index], probs=0.95, na.rm=TRUE) )
+
+#identifying very dry days
+(very.wet.index <- which(x <= PRwn95))
+
+#Total precipitation on wet days
+( R95p <- sum(x[very.wet.index]) )
+x.5max <- rollapply(data=x, width=5, FUN=sum, fill=NA, partial= TRUE,
+                    align="center")
+hydroplot(x.5max, ptype="ts+boxplot", pfreq="o", var.unit="mm")
+
+#Maximum annual value of 5 day precipitation
+(x.5max.annual <- daily2annual(x.5max, FUN=max, na.rm=TRUE))
+
+## Forecasting
+## subsetting only 1950 - 1975 to assess baseline 
+
+Napa50<-NapaD[NapaD$DATE_date >= "1950-01-01" 
+              & NapaD$DATE_date < "1976-01-01",]
+Paso50<-PasoD[PasoD$DATE_date >= "1950-01-01" 
+              & PasoD$DATE_date < "1976-01-01",]
+
+Napa00<-NapaD[NapaD$DATE_date >= "1995-01-01" 
+              & NapaD$DATE_date < "2020-11-01",]
+Paso00<-PasoD[PasoD$DATE_date >= "1995-01-01" 
+              & PasoD$DATE_date < "2020-11-01",]
+
+PN50 <- rbind(Paso50, Napa50)
+PN00 <- rbind(Paso00, Napa00)
+#temp from 1950-1975
+Explore <-ggplot(PN50) + 
+  geom_boxplot(aes(x="TMAX", y=TMAX, fill=AREA))+
+  geom_boxplot(aes(x="TMIN", y=TMIN, fill=AREA)) +
+  labs(x="1950-1975 Indices", y="Value") + theme_bw() + theme(axis.line = element_line(colour = "black"))
+Explore
+
+#Temp from 1995-2020
+
+Explore2 <-ggplot(PN00) + 
+  geom_boxplot(aes(x="TMAX", y=TMAX, fill=AREA))+
+  geom_boxplot(aes(x="TMIN", y=TMIN, fill=AREA)) +
+  labs(x="1995-2020 Indices", y="Value") + theme_bw() + theme(axis.line = element_line(colour = "black"))
+Explore2
